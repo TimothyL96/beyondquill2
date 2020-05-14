@@ -130,8 +130,6 @@ func backgroundCalcPowerSum() {
 			}
 		}
 
-		cur.IncrementByOne()
-
 		// If user input received
 		if hasUserInput {
 			// Check if user solution is already calculated
@@ -154,6 +152,8 @@ func backgroundCalcPowerSum() {
 				runtime.Gosched()
 			}
 		}
+
+		cur.IncrementByOne()
 	}
 }
 

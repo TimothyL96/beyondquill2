@@ -50,18 +50,18 @@ import (
 // 	}
 // }
 
-func TestPow20(t *testing.T) {
-	want := newLargeNumber("104857600000000000000000000")
-	a := newLargeNumber("20")
-	b := newLargeNumber("20")
-	get := pow(b, a)
-
-	if want.String() != get.String() {
-		t.Errorf("Error in TestPow. Want %s, Get %s", want.String(), get.String())
-	} else {
-		t.Log("Get", get.String())
-	}
-}
+// func TestPow20(t *testing.T) {
+// 	want := newLargeNumber("104857600000000000000000000")
+// 	a := newLargeNumber("20")
+// 	b := newLargeNumber("20")
+// 	get := pow(b, a)
+//
+// 	if want.String() != get.String() {
+// 		t.Errorf("Error in TestPow. Want %s, Get %s", want.String(), get.String())
+// 	} else {
+// 		t.Log("Get", get.String())
+// 	}
+// }
 
 // func BenchmarkPow(b *testing.B) {
 // 	x := newLargeNumber("5")
@@ -185,3 +185,57 @@ func TestPow20(t *testing.T) {
 // 		t.Log("Passed. Got:", get)
 // 	}
 // }
+
+func TestLargeNumber_IsLessThan(t *testing.T) {
+	// First number
+	ln := newLargeNumber("999")
+
+	// Second number
+	ln1 := newLargeNumber("1000")
+
+	// Set get and want
+	get := ln.IsLessThan(ln1)
+	want := true
+
+	if want != get {
+		t.Errorf("Error in TestLargeNumber multiple. Want %t, Get %t", want, get)
+	} else {
+		t.Log("Passed. Got:", get)
+	}
+}
+
+func TestLargeNumber_IsGreaterThan(t *testing.T) {
+	// First number
+	ln := newLargeNumber("999")
+
+	// Second number
+	ln1 := newLargeNumber("1000")
+
+	// Set get and want
+	get := ln.IsGreaterThan(ln1)
+	want := false
+
+	if want != get {
+		t.Errorf("Error in TestLargeNumber multiple. Want %t, Get %t", want, get)
+	} else {
+		t.Log("Passed. Got:", get)
+	}
+}
+
+func TestLargeNumber_IsEqual(t *testing.T) {
+	// First number
+	ln := newLargeNumber("1000")
+
+	// Second number
+	ln1 := newLargeNumber("1000")
+
+	// Set get and want
+	get := ln.IsEqual(ln1)
+	want := false
+
+	if want != get {
+		t.Errorf("Error in TestLargeNumber multiple. Want %t, Get %t", want, get)
+	} else {
+		t.Log("Passed. Got:", get)
+	}
+}
