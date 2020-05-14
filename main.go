@@ -15,15 +15,17 @@ var chInput = make(chan bool)
 var input largeNumber
 var caches = make(map[string]cache)
 
+// Cache results calculated before user input received
 type cache struct {
 	totalSum largeNumber
 }
 
-// Max length of max int
+// Store some very large numbers
 type largeNumber struct {
 	numbers []byte
 }
 
+// const
 var largeNumberOne largeNumber
 var largeNumberZero largeNumber
 
@@ -56,6 +58,7 @@ func main() {
 	answer.Print()
 }
 
+// Reader for user input
 func getUserInput() {
 	r := bufio.NewReader(os.Stdin)
 
@@ -70,6 +73,8 @@ func getUserInput() {
 	setUserInput(newLargeNumber(strings.TrimSpace(userInputStr)))
 }
 
+// Check and set user input.
+// Then pass it to the concurrent goroutine with channel
 func setUserInput(userInput largeNumber) {
 	if userInput.IsLessThan(largeNumberZero) {
 		panic("Negative numbers are not allowed:" + userInput.String())
@@ -78,13 +83,14 @@ func setUserInput(userInput largeNumber) {
 	// atomic.StoreUint64(&input, uint64(userInput))
 	input = userInput
 
-	// Signal input received and store
+	// Signal to channel user input received and store
 	chInput <- true
 
 	// Start timer after receiving and verifying user input ;D
 	start = time.Now()
 }
 
+// n^p
 func pow(n, p largeNumber) (a largeNumber) {
 	if n.Length() == 1 && n.GetAsInt(0) == 1 {
 		return newLargeNumber("1")
@@ -117,6 +123,7 @@ func backgroundCalcPowerSum() {
 	for {
 		sum.Add(pow(cur, cur))
 
+		// Only cache if user input is not received to reduce memory usage
 		if !hasUserInput {
 			caches[cur.String()] = cache{
 				totalSum: newLargeNumber(sum.String()),
@@ -125,26 +132,37 @@ func backgroundCalcPowerSum() {
 
 		cur.IncrementByOne()
 
+		// If user input received
 		if hasUserInput {
 			// Check if user solution is already calculated
 			if cur.IsGreaterThan(input) {
 				chResult <- caches[input.String()].totalSum
 				return
 			} else if cur.IsEqual(input) {
+				// Wait for calculated result
+				// Then pass the sum to the result channel
 				chResult <- sum
 			}
 		} else {
+			// If user input not received
 			select {
 			case <-chInput:
+				// If channel received, set user input received to true
 				hasUserInput = true
 			default:
-				// Make sure the goroutine to get user input is running
+				// Make sure the goroutine/thread to get user input is running
 				runtime.Gosched()
 			}
 		}
 	}
 }
 
+// Create a new large number
+// Store it in reverse order to perform operation more easily
+// Ex: 12345
+// array[0] = 5
+// array[1] = 4
+// ...
 func newLargeNumber(s string) largeNumber {
 	maxLen := len(s)
 	newBytes := make([]byte, maxLen)
@@ -157,6 +175,8 @@ func newLargeNumber(s string) largeNumber {
 	return largeNumber{numbers: newBytes}
 }
 
+// Get the numbers in reverse order
+// Use string builder for performance
 func (n *largeNumber) String() string {
 	var strBuilder strings.Builder
 	for i := n.Length() - 1; i >= 0; i-- {
@@ -166,6 +186,10 @@ func (n *largeNumber) String() string {
 	return strBuilder.String()
 }
 
+// Append some new numbers to the current number
+// Ex: 12345 append 6 = 612345
+// The "1" is stored in the last digit and not the first,
+// that's why 'Append'
 func (n *largeNumber) Append(s string) {
 	maxLen := len(s)
 	newBytes := make([]byte, maxLen)
@@ -175,13 +199,16 @@ func (n *largeNumber) Append(s string) {
 		j--
 	}
 
+	// Variadic operation ... will expand the array/slice
 	n.numbers = append(n.numbers, newBytes...)
 }
 
+// Replace the instance large numbers with a completely different large number
 func (n *largeNumber) Replace(s string) {
 	maxLen := len(s)
 	newBytes := make([]byte, maxLen)
 
+	// Flip all the numbers
 	for i, j := 0, maxLen-1; i < maxLen; i++ {
 		newBytes[i] = s[j]
 		j--
@@ -190,8 +217,8 @@ func (n *largeNumber) Replace(s string) {
 	n.numbers = newBytes
 }
 
+// Return true if n is less than c
 func (n *largeNumber) IsLessThan(c largeNumber) bool {
-	// Return true if n is less than c
 	if n.Length() < c.Length() {
 		return true
 	} else if n.Length() > c.Length() {
@@ -209,8 +236,8 @@ func (n *largeNumber) IsLessThan(c largeNumber) bool {
 	return false
 }
 
+// Return true if n is greater than c
 func (n *largeNumber) IsGreaterThan(c largeNumber) bool {
-	// Return true if n is greater than c
 	if n.IsLessThan(c) || n.IsEqual(c) {
 		return false
 	}
@@ -218,6 +245,7 @@ func (n *largeNumber) IsGreaterThan(c largeNumber) bool {
 	return true
 }
 
+// Return true if large number in n and c is equal
 func (n *largeNumber) IsEqual(c largeNumber) bool {
 	if n.IsLessThan(c) || c.IsLessThan(*n) {
 		return false
@@ -235,6 +263,7 @@ func (n *largeNumber) GetAsInt(i int) int {
 	return c
 }
 
+// Set integer v to position i
 func (n *largeNumber) Set(i int, v int) {
 	if v >= 10 {
 		panic("Input more than 10")
@@ -294,6 +323,7 @@ func (n *largeNumber) Add(l largeNumber) {
 		k1++
 	}
 
+	// If there's remaining bring forward value, append it
 	if bf > 0 {
 		n.Append(strconv.Itoa(bf))
 	}
@@ -345,6 +375,7 @@ func (n *largeNumber) Multiply(l largeNumber) {
 	}
 }
 
+// Print the numbers in n with comma separated format
 func (n *largeNumber) Print() {
 	var strBuilder strings.Builder
 	for i := n.Length() - 1; i >= 0; i-- {
